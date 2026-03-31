@@ -1,11 +1,14 @@
-from app.schemas.user import UserInDB, UserCreate, UserRead
+from app.schemas.user import UserInDB, UserRead
 
 import hmac
 
 
+DataBase = []
+
+
 class UserCRUD:
     def __init__(self):
-        self.db = []
+        self.db = DataBase
     
     def register(self, user: UserInDB) -> UserRead:
         self.db.append(user)
