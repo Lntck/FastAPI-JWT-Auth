@@ -2,7 +2,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
 from app.core.security import myctx, JWTManager
-from app.core.exceptions import UserAlreadyExists, TokenExpiredError, TokenInvalidError
+from app.core.exceptions import UserAlreadyExists, TokenInvalidError
 from app.crud.user import UserCRUD 
 from app.schemas.user import UserInDB, UserCreate, UserRead
 

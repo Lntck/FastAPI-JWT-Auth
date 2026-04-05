@@ -1,9 +1,7 @@
 from app.schemas.user import UserInDB, UserRead
 
-import hmac
 
-
-DataBase = []
+DataBase = {}
 
 
 class UserCRUD:
@@ -11,11 +9,8 @@ class UserCRUD:
         self.db = DataBase
     
     def register(self, user: UserInDB) -> UserRead:
-        self.db.append(user)
-        return UserRead(id=len(self.db), username=user.username)
+        self.db[user.username] = user
+        return UserRead(username=user.username)
 
     def get_by_username(self, username: str) -> UserInDB | None:
-        for user in self.db:
-            if hmac.compare_digest(user.username, username):
-                return user
-        return None
+        return self.db.get(username)
