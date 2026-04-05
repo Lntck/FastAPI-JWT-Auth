@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.exceptions import TokenExpiredError, TokenInvalidError, UserAlreadyExists
 from app.schemas.user import Token, UserCreate, UserRead
 from app.services.auth_service import AuthService, oauth2_scheme
 from app.crud.user import UserCRUD
+from app.core.rate_limit import limiter
 
 
 router = APIRouter()
@@ -31,7 +32,8 @@ def get_current_user(
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def register(user: UserCreate, service: AuthService = Depends(get_auth_service)):
+@limiter.limit("1/minute")
+async def register(request: Request, user: UserCreate, service: AuthService = Depends(get_auth_service)):
     try:
         return service.register_user(user)
     except UserAlreadyExists as e:
@@ -39,7 +41,8 @@ async def register(user: UserCreate, service: AuthService = Depends(get_auth_ser
 
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
+@limiter.limit("5/minute")
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
     user, token = service.auth_user(form_data.username, form_data.password)
 
     if not user:
