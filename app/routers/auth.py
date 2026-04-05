@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.exceptions import TokenExpiredError, TokenInvalidError, UserAlreadyExists
+from app.core.config import Settings, get_settings
 from app.schemas.user import Token, UserCreate, UserRead
 from app.services.auth_service import AuthService, oauth2_scheme
 from app.crud.user import UserCRUD
@@ -15,8 +16,8 @@ def get_user_crud():
     return UserCRUD()
 
 
-def get_auth_service(user_crud: UserCRUD = Depends(get_user_crud)):
-    return AuthService(user_crud)
+def get_auth_service(user_crud: UserCRUD = Depends(get_user_crud), settings: Settings = Depends(get_settings)):
+    return AuthService(user_crud, settings)
 
 
 def get_current_user(
@@ -59,5 +60,4 @@ async def about(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    user_id = user_crud.db.index(user) + 1 if user in user_crud.db else 0
-    return UserRead(id=user_id, username=user.username)
+    return UserRead(username=user.username)
