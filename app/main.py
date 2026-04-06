@@ -1,11 +1,9 @@
 from fastapi import FastAPI
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
-
-from app.routers import auth
+from app.core.exception_handlers import register_exception_handlers
+from app.routers import auth, users
 
 
 settings = get_settings()
@@ -15,6 +13,8 @@ app = FastAPI(
     version="1.0.0",
     debug=settings.debug,
 )
+
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler) # type: ignore[arg-type]
+register_exception_handlers(app)
 app.include_router(auth.router)
+app.include_router(users.router)
