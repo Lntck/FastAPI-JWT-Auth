@@ -1,5 +1,6 @@
 import jwt
 from datetime import datetime, timezone, timedelta
+from uuid import uuid4
 from passlib.context import CryptContext
 
 from app.core.exceptions import TokenExpiredError, TokenInvalidError
@@ -12,11 +13,13 @@ class JWTManager:
     @staticmethod
     def create_token(payload: dict, secret_key: str, expires_minutes: int) -> str:
         data_to_encode = payload.copy()
+        now = datetime.now(timezone.utc)
 
         data_to_encode.update(
             {
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_minutes),
-                "iat": datetime.now(timezone.utc)
+                "exp": now + timedelta(minutes=expires_minutes),
+                "iat": now,
+                "jti": uuid4().hex,
             }
         )
 

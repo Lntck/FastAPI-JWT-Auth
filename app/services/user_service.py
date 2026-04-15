@@ -9,7 +9,6 @@ class UserService:
 
     def get_profile(self, username: str) -> UserRead:
         user = self.user_crud.get_by_username(username)
-        print(f"UserService.get_profile: Retrieved user for username '{username}': {user}")
         if not user:
             raise UserNotFound()
         return UserRead(username=user.username)

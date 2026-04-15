@@ -7,7 +7,7 @@ from app.services.user_service import UserService
 from app.crud.user import UserCRUD
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
 def get_user_crud():

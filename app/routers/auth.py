@@ -1,13 +1,28 @@
+from contextlib import suppress
+
 from fastapi import APIRouter, Depends, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_auth_service
+from app.core.exceptions import TokenExpiredError, TokenInvalidError
 from app.schemas.user import Token, UserCreate, UserRead
 from app.services.auth_service import AuthService
 from app.core.rate_limit import limiter
 
 
 router = APIRouter()
+
+
+def set_refresh_cookie(response: Response, refresh_token: str, service: AuthService) -> None:
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=service.settings.cookie_secure,
+        samesite=service.settings.cookie_samesite,
+        path="/",
+        max_age=60 * service.settings.refresh_token_expire_m,
+    )
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -21,10 +36,7 @@ async def register(request: Request, user: UserCreate, service: AuthService = De
 async def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
     access_token, refresh_token = service.auth_user(form_data.username, form_data.password)
 
-    print(f"Generated access token: {access_token}")
-    print(f"Generated refresh token: {refresh_token}")
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True,
-                        secure=True, samesite="strict", max_age=60 * service.settings.refresh_token_expire_m)
+    set_refresh_cookie(response, refresh_token, service)
 
     return Token(access_token=access_token)
 
@@ -36,7 +48,26 @@ async def refresh(request: Request, response: Response, service: AuthService = D
 
     access_token, new_refresh_token = service.refresh_token(refresh_token)
 
-    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True,
-                        secure=True, samesite="strict", max_age=60 * service.settings.refresh_token_expire_m)
+    set_refresh_cookie(response, new_refresh_token, service)
 
     return Token(access_token=access_token)
+
+
+@router.post("/logout")
+@limiter.limit("3/minute")
+async def logout(request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
+    refresh_token = request.cookies.get("refresh_token", "")
+
+    if refresh_token:
+        with suppress(TokenInvalidError, TokenExpiredError):
+            service.remove_refresh_token(refresh_token)
+
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=service.settings.cookie_secure,
+        samesite=service.settings.cookie_samesite,
+        path="/",
+    )
+
+    return {"message": "logout successfully!"}
