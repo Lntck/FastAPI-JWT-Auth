@@ -3,26 +3,15 @@ from contextlib import suppress
 from fastapi import APIRouter, Depends, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.dependencies import get_auth_service
-from app.core.exceptions import TokenExpiredError, TokenInvalidError
+from app.api.dependencies.services import get_auth_service
+from app.exceptions.custom import TokenExpiredError, TokenInvalidError
 from app.schemas.user import Token, UserCreate, UserRead
 from app.services.auth_service import AuthService
-from app.core.rate_limit import limiter
+from app.api.middlewares.rate_limit import limiter
+from app.utils.http import set_refresh_cookie
 
 
 router = APIRouter()
-
-
-def set_refresh_cookie(response: Response, refresh_token: str, service: AuthService) -> None:
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=service.settings.cookie_secure,
-        samesite=service.settings.cookie_samesite,
-        path="/",
-        max_age=60 * service.settings.refresh_token_expire_m,
-    )
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)

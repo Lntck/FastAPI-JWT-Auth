@@ -1,6 +1,6 @@
 from app.core.config import Settings
 from app.core.security import myctx, JWTManager
-from app.core.exceptions import InvalidCredentials, UserAlreadyExists, TokenInvalidError
+from app.exceptions.custom import InvalidCredentials, UserAlreadyExists, TokenInvalidError
 from app.crud.user import UserCRUD 
 from app.schemas.user import UserInDB, UserCreate, UserRead
 

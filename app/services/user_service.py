@@ -1,5 +1,5 @@
 from app.crud.user import UserCRUD
-from app.core.exceptions import UserNotFound
+from app.exceptions.custom import UserNotFound
 from app.schemas.user import UserRead
 
 

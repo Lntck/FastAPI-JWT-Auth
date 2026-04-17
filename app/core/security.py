@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from passlib.context import CryptContext
 
-from app.core.exceptions import TokenExpiredError, TokenInvalidError
+from app.exceptions.custom import TokenExpiredError, TokenInvalidError
 
 
 myctx = CryptContext(schemes=["argon2"], deprecated="auto")
