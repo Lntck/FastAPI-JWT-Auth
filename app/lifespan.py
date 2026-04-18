@@ -1,0 +1,12 @@
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from app.db import db_helper
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup code
+    yield
+    # shutdown code
+    await db_helper.dispose()

@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
-from app.core.config import get_settings
-from app.api.middlewares.rate_limit import limiter
-from app.exceptions.handlers import register_exception_handlers
-from app.api.v1.router import router as v1_router
-from app.core.constants import API_V1_PREFIX
+from app.api.middlewares import limiter
+from app.api.v1 import router as v1_router
+from app.core import API_V1_PREFIX, get_settings
+from app.exceptions import register_exception_handlers
+from app.lifespan import lifespan
 
 
 settings = get_settings()
@@ -13,6 +13,7 @@ app = FastAPI(
     title="My Auth API",
     version="1.0.0",
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

@@ -2,28 +2,30 @@ from contextlib import suppress
 
 from fastapi import APIRouter, Depends, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies.services import get_auth_service
-from app.exceptions.custom import TokenExpiredError, TokenInvalidError
-from app.schemas.user import Token, UserCreate, UserRead
-from app.services.auth_service import AuthService
-from app.api.middlewares.rate_limit import limiter
-from app.utils.http import set_refresh_cookie
+from app.api.dependencies import get_auth_service, get_user_service
+from app.api.middlewares import limiter
+from app.exceptions import TokenExpiredError, TokenInvalidError
+from app.schemas import Token, UserCreate, UserRead
+from app.services import AuthService, UserService
+from app.utils import set_refresh_cookie
+from app.db import db_helper
 
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-@limiter.limit("1/minute")
-async def register(request: Request, user: UserCreate, service: AuthService = Depends(get_auth_service)):
-    return service.register_user(user)
+# @limiter.limit("1/minute")
+async def register(request: Request, user: UserCreate, session: AsyncSession = Depends(db_helper.session_getter), service: UserService = Depends(get_user_service)):
+    return await service.create_user(session, user)
 
 
 @router.post("/login", response_model=Token)
-@limiter.limit("5/minute")
-async def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
-    access_token, refresh_token = service.auth_user(form_data.username, form_data.password)
+# @limiter.limit("5/minute")
+async def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(db_helper.session_getter), service: AuthService = Depends(get_auth_service)):
+    access_token, refresh_token = await service.auth_user(session, form_data.username, form_data.password)
 
     set_refresh_cookie(response, refresh_token, service)
 
@@ -31,11 +33,11 @@ async def login(request: Request, response: Response, form_data: OAuth2PasswordR
 
 
 @router.post("/refresh", response_model=Token)
-@limiter.limit("3/minute")
-async def refresh(request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
+# @limiter.limit("3/minute")
+async def refresh(request: Request, response: Response, session: AsyncSession = Depends(db_helper.session_getter), service: AuthService = Depends(get_auth_service)):
     refresh_token = request.cookies.get("refresh_token", "")
 
-    access_token, new_refresh_token = service.refresh_token(refresh_token)
+    access_token, new_refresh_token = await service.refresh_token(session, refresh_token)
 
     set_refresh_cookie(response, new_refresh_token, service)
 
@@ -44,12 +46,12 @@ async def refresh(request: Request, response: Response, service: AuthService = D
 
 @router.post("/logout")
 @limiter.limit("3/minute")
-async def logout(request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
+async def logout(request: Request, response: Response, session: AsyncSession = Depends(db_helper.session_getter), service: AuthService = Depends(get_auth_service)):
     refresh_token = request.cookies.get("refresh_token", "")
 
     if refresh_token:
         with suppress(TokenInvalidError, TokenExpiredError):
-            service.remove_refresh_token(refresh_token)
+            await service.remove_refresh_token(session, refresh_token)
 
     response.delete_cookie(
         key="refresh_token",

@@ -1,5 +1,5 @@
-from app.crud.user import UserCRUD
+from app.crud import UserCRUD
 
 
-def get_user_crud():
+async def get_user_crud():
     return UserCRUD()

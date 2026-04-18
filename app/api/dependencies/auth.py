@@ -1,9 +1,9 @@
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from app.api.dependencies.services import get_auth_service
-from app.services.auth_service import AuthService
-from app.core.constants import API_V1_PREFIX
+from app.core import API_V1_PREFIX
+from app.services import AuthService
+from .providers import get_auth_service
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{API_V1_PREFIX}/login")
