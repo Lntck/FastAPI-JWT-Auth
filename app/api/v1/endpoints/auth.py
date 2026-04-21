@@ -8,7 +8,7 @@ import redis.asyncio as redis
 from app.api.dependencies import get_auth_service, get_user_service
 from app.api.middlewares import limiter
 from app.exceptions import TokenExpiredError, TokenInvalidError
-from app.schemas import Token, UserCreate, UserRead
+from app.schemas import Token, UserRegister, UserRead
 from app.services import AuthService, UserService
 from app.utils import set_refresh_cookie
 from app.db import db_helper, redis_helper
@@ -20,7 +20,7 @@ router = APIRouter()
 # @limiter.limit("1/minute")
 async def register(
     request: Request,
-    user: UserCreate,
+    user: UserRegister,
     session: AsyncSession = Depends(db_helper.session_getter),
     service: UserService = Depends(get_user_service),
 ):

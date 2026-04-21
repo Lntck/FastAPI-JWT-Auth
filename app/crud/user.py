@@ -3,19 +3,20 @@ from typing import Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas import UserInDB
 from app.models import User
 
 
 class UserCRUD:
-    def __init__(self):
-        pass
-
-    async def create_user(self, session: AsyncSession, user_in_db: UserInDB) -> User:
-        user = User(**user_in_db.model_dump())
+    async def create_user(self, session: AsyncSession, user: User) -> User:
         session.add(user)
         await session.commit()
+        await session.refresh(user)
         return user
+    
+    async def get_by_id(self, session: AsyncSession, user_id: int) -> User | None:
+        stmt = select(User).where(User.id == user_id)
+        result = await session.scalar(stmt)
+        return result
 
     async def get_by_username(self, session: AsyncSession, username: str) -> User | None:
         stmt = select(User).where(User.username == username)

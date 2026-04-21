@@ -22,15 +22,15 @@ class AuthService:
             raise TokenInvalidError("Refresh token is invalid")
 
     @staticmethod
-    def _validate_token_payload(payload: dict | None, expected_type: str, invalid_message: str) -> str:
+    def _validate_token_payload(payload: dict | None, expected_type: str, invalid_message: str) -> int:
         if not payload:
             raise TokenInvalidError(invalid_message)
 
-        username = payload.get("sub")
+        user_id = payload.get("sub")
         token_type = payload.get("type")
         token_jti = payload.get("jti")
 
-        if not isinstance(username, str) or not username:
+        if not isinstance(user_id, str) or not user_id:
             raise TokenInvalidError(invalid_message)
 
         if token_type != expected_type:
@@ -38,8 +38,13 @@ class AuthService:
 
         if not isinstance(token_jti, str) or not token_jti:
             raise TokenInvalidError(invalid_message)
+        
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            raise TokenInvalidError(invalid_message)
 
-        return username
+        return user_id
 
     async def auth_user(
         self,
@@ -48,18 +53,18 @@ class AuthService:
         username: str,
         password: str,
     ) -> tuple[str, str]:
-        user = await self.user_service.get_by_username_with_password(session, username)
+        user = await self.user_service.get_by_username(session, username)
 
         if not myctx.verify(password, user.password_hash):
             raise InvalidCredentials()
 
         access_token, _ = self.jwt_manager.create_token(
-            {"sub": user.username, "type": self.ACCESS_TOKEN_TYPE},
+            {"sub": str(user.id), "type": self.ACCESS_TOKEN_TYPE},
             self.settings.access_secret,
             self.settings.access_token_expire_m,
         )
         refresh_token, ref_jti = self.jwt_manager.create_token(
-            {"sub": user.username, "type": self.REFRESH_TOKEN_TYPE},
+            {"sub": str(user.id), "type": self.REFRESH_TOKEN_TYPE},
             self.settings.refresh_secret,
             self.settings.refresh_token_expire_m,
         )
@@ -75,23 +80,23 @@ class AuthService:
         refresh_token: str,
     ) -> tuple[str, str]:
         payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
-        username = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
+        user_id = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
         token_jti = payload["jti"]
 
         await self._consume_refresh_token(redis_client, token_jti)
 
         try:
-            user = await self.user_service.get_by_username(session, username)
+            user = await self.user_service.get_by_id(session, user_id)
         except UserNotFound:
             raise TokenInvalidError("Refresh token is invalid")
 
         new_access_token, _ = self.jwt_manager.create_token(
-            {"sub": user.username, "type": self.ACCESS_TOKEN_TYPE},
+            {"sub": str(user.id), "type": self.ACCESS_TOKEN_TYPE},
             self.settings.access_secret,
             self.settings.access_token_expire_m,
         )
         new_refresh_token, new_ref_jti = self.jwt_manager.create_token(
-            {"sub": user.username, "type": self.REFRESH_TOKEN_TYPE},
+            {"sub": str(user.id), "type": self.REFRESH_TOKEN_TYPE},
             self.settings.refresh_secret,
             self.settings.refresh_token_expire_m,
         )
@@ -107,16 +112,16 @@ class AuthService:
         refresh_token: str,
     ) -> None:
         payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
-        username = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
+        user_id = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
         token_jti = payload["jti"]
 
         await self._consume_refresh_token(redis_client, token_jti)
 
         try:
-            await self.user_service.get_by_username(session, username)
+            await self.user_service.get_by_id(session, user_id)
         except UserNotFound:
             raise TokenInvalidError("Refresh token is invalid")
 
-    def get_username_from_token(self, token: str) -> str:
+    def get_user_id_from_token(self, token: str) -> int:
         payload = self.jwt_manager.decode_token(token, self.settings.access_secret)
         return self._validate_token_payload(payload, self.ACCESS_TOKEN_TYPE, "Invalid access token")
