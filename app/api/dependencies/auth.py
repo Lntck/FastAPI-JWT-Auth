@@ -13,4 +13,4 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     service: AuthService = Depends(get_auth_service),
 ) -> str:
-    return service.get_user_from_token(token)
+    return service.get_username_from_token(token)

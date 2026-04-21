@@ -11,22 +11,23 @@ myctx = CryptContext(schemes=["argon2"], deprecated="auto")
 
 class JWTManager:
     @staticmethod
-    def create_token(payload: dict, secret_key: str, expires_minutes: int) -> str:
+    def create_token(payload: dict, secret_key: str, expires_minutes: int) -> tuple[str, str]:
         data_to_encode = payload.copy()
         now = datetime.now(timezone.utc)
+        jti = uuid4().hex
 
         data_to_encode.update(
             {
                 "exp": now + timedelta(minutes=expires_minutes),
                 "iat": now,
-                "jti": uuid4().hex,
+                "jti": jti,
             }
         )
 
-        return jwt.encode(data_to_encode, secret_key, algorithm="HS256")
+        return jwt.encode(data_to_encode, secret_key, algorithm="HS256"), jti
 
     @staticmethod
-    def decode_token(token: str, secret_key: str) -> dict | None:
+    def decode_token(token: str, secret_key: str) -> dict:
         try:
             return jwt.decode(token, secret_key, algorithms=["HS256"])
         except jwt.ExpiredSignatureError:

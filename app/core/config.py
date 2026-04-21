@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     debug: bool = False
     database_url: str = "DATABASE_URL"
+    redis_url: str = "REDIS_URL"
     naming_convention: dict[str, str] = {
         "ix": "ix_%(column_0_label)s",
         "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -30,6 +31,17 @@ class Settings(BaseSettings):
 
         if not value.startswith(("postgresql+asyncpg://", "postgres+asyncpg://")):
             raise ValueError("DATABASE_URL must use postgresql+asyncpg")
+
+        return value
+
+    @field_validator("redis_url")
+    @classmethod
+    def validate_redis_url(cls, value: str) -> str:
+        if value == "REDIS_URL":
+            raise ValueError("REDIS_URL is not configured")
+
+        if not value.startswith(("redis://", "rediss://")):
+            raise ValueError("REDIS_URL must use redis:// or rediss://")
 
         return value
 

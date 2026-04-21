@@ -1,11 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis.asyncio as redis
 
 from app.core import JWTManager, Settings, myctx
-from app.exceptions import InvalidCredentials, TokenInvalidError
+from app.exceptions import InvalidCredentials, TokenInvalidError, UserNotFound
 from app.services.user_service import UserService
-
-
-RefreshTokens = {}
 
 
 class AuthService:
@@ -16,6 +14,12 @@ class AuthService:
         self.user_service = user_service
         self.settings = settings
         self.jwt_manager = JWTManager()
+
+    @staticmethod
+    async def _consume_refresh_token(redis_client: redis.Redis, token_jti: str) -> None:
+        removed_token = await redis_client.getdel(f"rft:{token_jti}")
+        if removed_token is None:
+            raise TokenInvalidError("Refresh token is invalid")
 
     @staticmethod
     def _validate_token_payload(payload: dict | None, expected_type: str, invalid_message: str) -> str:
@@ -37,66 +41,82 @@ class AuthService:
 
         return username
 
-    async def auth_user(self, session: AsyncSession, username: str, password: str) -> tuple[str, str]:
+    async def auth_user(
+        self,
+        session: AsyncSession,
+        redis_client: redis.Redis,
+        username: str,
+        password: str,
+    ) -> tuple[str, str]:
         user = await self.user_service.get_by_username_with_password(session, username)
 
-        if not user or not myctx.verify(password, user.password_hash):
+        if not myctx.verify(password, user.password_hash):
             raise InvalidCredentials()
 
-        access_token = self.jwt_manager.create_token(
+        access_token, _ = self.jwt_manager.create_token(
             {"sub": user.username, "type": self.ACCESS_TOKEN_TYPE},
             self.settings.access_secret,
             self.settings.access_token_expire_m,
         )
-        refresh_token = self.jwt_manager.create_token(
+        refresh_token, ref_jti = self.jwt_manager.create_token(
             {"sub": user.username, "type": self.REFRESH_TOKEN_TYPE},
             self.settings.refresh_secret,
             self.settings.refresh_token_expire_m,
         )
-        
-        RefreshTokens.setdefault(user.username, set()).add(refresh_token)
+
+        await redis_client.setex(f"rft:{ref_jti}", self.settings.refresh_token_expire_m * 60, "valid")
         
         return access_token, refresh_token
 
-    async def refresh_token(self, session: AsyncSession, refresh_token: str) -> tuple[str, str]:
+    async def refresh_token(
+        self,
+        session: AsyncSession,
+        redis_client: redis.Redis,
+        refresh_token: str,
+    ) -> tuple[str, str]:
         payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
         username = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
-        user = await self.user_service.get_by_username(session, username)
+        token_jti = payload["jti"]
 
-        if not user:
-            raise TokenInvalidError("User not found")
-        
-        if refresh_token not in RefreshTokens.get(username, ()):
+        await self._consume_refresh_token(redis_client, token_jti)
+
+        try:
+            user = await self.user_service.get_by_username(session, username)
+        except UserNotFound:
             raise TokenInvalidError("Refresh token is invalid")
-        RefreshTokens[username].remove(refresh_token)
 
-        new_access_token = self.jwt_manager.create_token(
+        new_access_token, _ = self.jwt_manager.create_token(
             {"sub": user.username, "type": self.ACCESS_TOKEN_TYPE},
             self.settings.access_secret,
             self.settings.access_token_expire_m,
         )
-        new_refresh_token = self.jwt_manager.create_token(
+        new_refresh_token, new_ref_jti = self.jwt_manager.create_token(
             {"sub": user.username, "type": self.REFRESH_TOKEN_TYPE},
             self.settings.refresh_secret,
             self.settings.refresh_token_expire_m,
         )
 
-        RefreshTokens.setdefault(user.username, set()).add(new_refresh_token)
+        await redis_client.setex(f"rft:{new_ref_jti}", self.settings.refresh_token_expire_m * 60, "valid")
 
         return new_access_token, new_refresh_token
     
-    async def remove_refresh_token(self, session: AsyncSession, refresh_token: str) -> None:
+    async def remove_refresh_token(
+        self,
+        session: AsyncSession,
+        redis_client: redis.Redis,
+        refresh_token: str,
+    ) -> None:
         payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
         username = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
-        user = await self.user_service.get_by_username(session, username)
+        token_jti = payload["jti"]
 
-        if not user:
-            raise TokenInvalidError("User not found")
+        await self._consume_refresh_token(redis_client, token_jti)
 
-        if refresh_token not in RefreshTokens.get(username, ()):
+        try:
+            await self.user_service.get_by_username(session, username)
+        except UserNotFound:
             raise TokenInvalidError("Refresh token is invalid")
-        RefreshTokens[username].remove(refresh_token)
 
-    def get_user_from_token(self, token: str) -> str:
+    def get_username_from_token(self, token: str) -> str:
         payload = self.jwt_manager.decode_token(token, self.settings.access_secret)
         return self._validate_token_payload(payload, self.ACCESS_TOKEN_TYPE, "Invalid access token")
