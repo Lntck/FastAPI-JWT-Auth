@@ -4,6 +4,7 @@ from app.exceptions import UserNotFound, UserAlreadyExists
 from app.schemas import UserRegister
 from app.models import User
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -12,9 +13,6 @@ class UserService:
         self.user_crud = user_crud
     
     async def create_user(self, session: AsyncSession, reg_data: UserRegister) -> User:
-        if await self.user_crud.get_by_username(session, reg_data.username):
-            raise UserAlreadyExists()
-
         hashed_psw = myctx.hash(reg_data.password.get_secret_value())
 
         user = User(
@@ -23,7 +21,11 @@ class UserService:
             password_hash=hashed_psw,
         )
 
-        return await self.user_crud.create_user(session, user)
+        try:
+            return await self.user_crud.create_user(session, user)
+        except IntegrityError as exc:
+            await session.rollback()
+            raise UserAlreadyExists() from exc
 
     async def get_by_id(self, session: AsyncSession, user_id: int) -> User:
         user = await self.user_crud.get_by_id(session, user_id)
