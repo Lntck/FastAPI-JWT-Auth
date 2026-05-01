@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -52,9 +52,10 @@ class Settings(BaseSettings):
             raise ValueError("JWT secret must be at least 32 characters long")
         return value
 
-    class Config:
-        env_file = ".env"
-        frozen = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        frozen=True
+    )
 
 
 @lru_cache
