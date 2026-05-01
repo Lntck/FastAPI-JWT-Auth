@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis
 
-from app.core import JWTManager, Settings, myctx
+from app.core import JWTManager, Settings, verify_password
 from app.exceptions import InvalidCredentials, TokenInvalidError, UserNotFound
 from app.services.protocols import UserServiceProtocol
 
@@ -55,7 +55,7 @@ class AuthService:
     ) -> tuple[str, str]:
         user = await self.user_service.get_by_username(session, username)
 
-        if not myctx.verify(password, user.password_hash):
+        if not verify_password(password, user.password_hash):
             raise InvalidCredentials()
 
         access_token, _ = self.jwt_manager.create_token(

@@ -3,12 +3,21 @@ from app.core import Settings
 
 
 @pytest.fixture()
-def test_settings() -> Settings:
+def access_secret():
+    return "a" * 32
+
+@pytest.fixture()
+def refresh_secret():
+    return "b" * 32
+
+
+@pytest.fixture()
+def test_settings(access_secret, refresh_secret) -> Settings:
     return Settings(
         database_url="postgresql+asyncpg://user:pass@localhost:5432/test_db",
         redis_url="redis://localhost:6379/0",
-        access_secret="a" * 32,
-        refresh_secret="b" * 32,
+        access_secret=access_secret,
+        refresh_secret=refresh_secret,
         cookie_secure=False,
         cookie_samesite="lax",
     )

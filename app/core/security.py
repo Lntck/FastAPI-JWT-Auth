@@ -9,6 +9,13 @@ from app.exceptions import TokenExpiredError, TokenInvalidError
 myctx = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
+def hash_password(password: str) -> str:
+    return myctx.hash(password)
+
+def verify_password(password: str, password_hash: str) -> bool:
+    return myctx.verify(password, password_hash)
+
+
 class JWTManager:
     @staticmethod
     def create_token(payload: dict, secret_key: str, expires_minutes: int) -> tuple[str, str]:

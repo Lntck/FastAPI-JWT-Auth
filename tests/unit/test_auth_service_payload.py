@@ -39,8 +39,8 @@ def test_validate_token_payload_invalid(payload):
 def test_get_user_id_from_token(test_settings: Settings):
     service = AuthService(FakeUserService(), test_settings)
     token, _ = service.jwt_manager.create_token(
-        {"sub": "42", "type": service.ACCESS_TOKEN_TYPE},
+        {"sub": "777", "type": service.ACCESS_TOKEN_TYPE},
         test_settings.access_secret,
         5,
     )
-    assert service.get_user_id_from_token(token) == 42
+    assert service.get_user_id_from_token(token) == 777

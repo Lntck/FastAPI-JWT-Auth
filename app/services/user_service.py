@@ -1,5 +1,5 @@
 from app.crud import UserCRUD
-from app.core import myctx
+from app.core import hash_password
 from app.exceptions import UserNotFound, UserAlreadyExists
 from app.schemas import UserRegister
 from app.models import User
@@ -13,7 +13,7 @@ class UserService:
         self.user_crud = user_crud
     
     async def create_user(self, session: AsyncSession, reg_data: UserRegister) -> User:
-        hashed_psw = myctx.hash(reg_data.password.get_secret_value())
+        hashed_psw = hash_password(reg_data.password.get_secret_value())
 
         user = User(
             username=reg_data.username,
