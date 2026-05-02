@@ -42,7 +42,8 @@ Implements secure token-based authentication with access/refresh token rotation,
 |  |- api/
 |  |  |- dependencies/
 |  |  |- middlewares/
-|  |  |- v1/endpoints/
+|  |  |- v1/
+|  |  |  |- endpoints/
 |  |- core/
 |  |- crud/
 |  |- db/
@@ -51,9 +52,15 @@ Implements secure token-based authentication with access/refresh token rotation,
 |  |- schemas/
 |  |- services/
 |  |- utils/
+|- tests/
+|  |- fakes/
+|  |- unit/
 |- alembic.ini
-|- requirements.txt
+|- pyproject.toml
+|- poetry.lock
+|- pytest.ini
 |- .env.template
+|- README.md
 ```
 
 ## Authentication Flow
@@ -77,36 +84,38 @@ Implements secure token-based authentication with access/refresh token rotation,
 | POST | `/api/v1/logout` | No | Revoke current refresh token and clear cookie |
 | GET | `/api/v1/about_me` | Bearer | Get current authenticated user |
 
-## Quick Start
+## Quick Start (Poetry)
 
 ### 1. Prerequisites
 
-- Python 3.11+
+- Python 3.12+
+- Poetry 2.0+
 - PostgreSQL
 - Redis
 
-### 2. Create and activate virtual environment
+### 2. Install Poetry
 
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-. .\.venv\Scripts\Activate.ps1
-```
-
-Linux/macOS:
+If you do not have Poetry installed:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+pipx install poetry
 ```
 
 ### 3. Install dependencies
 
+Runtime dependencies:
+
 ```bash
-pip install -r requirements.txt
+poetry install
 ```
+
+Development and testing tools:
+
+```bash
+poetry install --with dev
+```
+
+Tip: you can run `poetry shell` once and then run commands without `poetry run`.
 
 ### 4. Configure environment
 
@@ -144,19 +153,41 @@ Important for local HTTP development:
 ### 5. Run database migrations
 
 ```bash
-alembic upgrade head
+poetry run alembic upgrade head
 ```
 
 ### 6. Start the app
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Open:
 
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - ReDoc: `http://127.0.0.1:8000/redoc`
+
+## Testing
+
+Run all tests:
+
+```bash
+poetry run pytest
+```
+
+Run only unit tests:
+
+```bash
+poetry run pytest tests/unit
+```
+
+## Development Tools
+
+Format code with Black:
+
+```bash
+poetry run black .
+```
 
 ## Request Examples
 
@@ -222,19 +253,19 @@ Common statuses:
 Create migration:
 
 ```bash
-alembic revision --autogenerate -m "describe change"
+poetry run alembic revision --autogenerate -m "describe change"
 ```
 
 Upgrade DB:
 
 ```bash
-alembic upgrade head
+poetry run alembic upgrade head
 ```
 
 Downgrade one revision:
 
 ```bash
-alembic downgrade -1
+poetry run alembic downgrade -1
 ```
 
 ## Current Limitations
@@ -242,4 +273,4 @@ alembic downgrade -1
 - No email verification flow
 - No password reset flow
 - No role-based authorization checks (role field exists but is not enforced)
-- No automated test suite in repository yet
+- Test coverage is unit-focused; no integration tests yet
