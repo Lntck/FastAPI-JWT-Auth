@@ -1,13 +1,13 @@
 from fastapi import Response
 
-from app.services.auth_service import AuthService
+from app.services import AuthService, UserService
 from app.utils.http import set_refresh_cookie
 
-from tests.fakes import FakeUserService
+from tests.fakes import FakeUserCRUD
 
 
 def test_set_refresh_cookie_sets_attributes(test_settings):
-    service = AuthService(FakeUserService(), test_settings)
+    service = AuthService(UserService(FakeUserCRUD()), test_settings)
     response = Response()
 
     set_refresh_cookie(response, "token123", service)

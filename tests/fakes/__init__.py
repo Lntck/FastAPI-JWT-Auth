@@ -1,4 +1,4 @@
-from .user_service import FakeUserService
+from .user_crud import FakeUserCRUD
 
 
-__all__ = ("FakeUserService",)
+__all__ = ("FakeUserCRUD",)

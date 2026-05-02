@@ -1,11 +1,17 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
 from app.models import User
 
 
-class UserServiceProtocol(Protocol):
-    async def get_by_id(self, session: Any, user_id: int) -> User:
+class UserCRUDProtocol(Protocol):
+    async def create_user(self, session: Any, user: User) -> User:
         ...
 
-    async def get_by_username(self, session: Any, username: str) -> User:
+    async def get_by_id(self, session: Any, user_id: int) -> User | None:
+        ...
+
+    async def get_by_username(self, session: Any, username: str) -> User | None:
+        ...
+
+    async def get_all_users(self, session: Any) -> Sequence[User]:
         ...

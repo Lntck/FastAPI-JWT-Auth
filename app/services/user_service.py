@@ -1,15 +1,15 @@
-from app.crud import UserCRUD
 from app.core import hash_password
 from app.exceptions import UserNotFound, UserAlreadyExists
 from app.schemas import UserRegister
 from app.models import User
+from app.services.protocols import UserCRUDProtocol
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserService:
-    def __init__(self, user_crud: UserCRUD):
+    def __init__(self, user_crud: UserCRUDProtocol):
         self.user_crud = user_crud
     
     async def create_user(self, session: AsyncSession, reg_data: UserRegister) -> User:

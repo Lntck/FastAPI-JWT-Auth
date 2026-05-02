@@ -2,9 +2,9 @@ import pytest
 
 from app.core import Settings
 from app.exceptions import TokenInvalidError
-from app.services.auth_service import AuthService
+from app.services import AuthService, UserService
+from tests.fakes import FakeUserCRUD
 
-from tests.fakes import FakeUserService
 
 
 def test_validate_token_payload_ok():
@@ -37,7 +37,7 @@ def test_validate_token_payload_invalid(payload):
 
 
 def test_get_user_id_from_token(test_settings: Settings):
-    service = AuthService(FakeUserService(), test_settings)
+    service = AuthService(UserService(FakeUserCRUD()), test_settings)
     token, _ = service.jwt_manager.create_token(
         {"sub": "777", "type": service.ACCESS_TOKEN_TYPE},
         test_settings.access_secret,

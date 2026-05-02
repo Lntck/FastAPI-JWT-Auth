@@ -10,7 +10,6 @@ def access_secret():
 def refresh_secret():
     return "b" * 32
 
-
 @pytest.fixture()
 def test_settings(access_secret, refresh_secret) -> Settings:
     return Settings(
@@ -21,3 +20,10 @@ def test_settings(access_secret, refresh_secret) -> Settings:
         cookie_secure=False,
         cookie_samesite="lax",
     )
+
+@pytest.fixture()
+def dummy_session():
+    class DummySession:
+        async def rollback(self):
+            pass
+    return DummySession()

@@ -3,14 +3,14 @@ import redis.asyncio as redis
 
 from app.core import JWTManager, Settings, verify_password
 from app.exceptions import InvalidCredentials, TokenInvalidError, UserNotFound
-from app.services.protocols import UserServiceProtocol
+from app.services import UserService
 
 
 class AuthService:
     ACCESS_TOKEN_TYPE = "access"
     REFRESH_TOKEN_TYPE = "refresh"
 
-    def __init__(self, user_service: UserServiceProtocol, settings: Settings):
+    def __init__(self, user_service: UserService, settings: Settings):
         self.user_service = user_service
         self.settings = settings
         self.jwt_manager = JWTManager()
