@@ -17,13 +17,16 @@ def test_settings(access_secret, refresh_secret) -> Settings:
         redis_url="redis://localhost:6379/0",
         access_secret=access_secret,
         refresh_secret=refresh_secret,
-        cookie_secure=False,
-        cookie_samesite="lax",
+        cookie_secure=True,
+        cookie_samesite="strict",
     )
 
 @pytest.fixture()
 def dummy_session():
     class DummySession:
+        def __init__(self):
+            self.rollback_called = False
+
         async def rollback(self):
-            pass
+            self.rollback_called = True
     return DummySession()

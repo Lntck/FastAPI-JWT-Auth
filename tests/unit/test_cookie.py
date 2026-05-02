@@ -1,3 +1,4 @@
+import pytest
 from fastapi import Response
 
 from app.services import AuthService, UserService
@@ -6,8 +7,11 @@ from app.utils.http import set_refresh_cookie
 from tests.fakes import FakeUserCRUD
 
 
-def test_set_refresh_cookie_sets_attributes(test_settings):
-    service = AuthService(UserService(FakeUserCRUD()), test_settings)
+@pytest.mark.parametrize("cookie_secure", [True, False])
+def test_set_refresh_cookie_attributes(test_settings, cookie_secure):
+    settings = test_settings.model_copy(update={"cookie_secure": cookie_secure})
+
+    service = AuthService(UserService(FakeUserCRUD()), settings)
     response = Response()
 
     set_refresh_cookie(response, "token123", service)
@@ -19,7 +23,7 @@ def test_set_refresh_cookie_sets_attributes(test_settings):
 
     assert "refresh_token=token123" in lower
     assert "httponly" in lower
-    assert f"samesite={test_settings.cookie_samesite}" in lower
+    assert f"samesite={settings.cookie_samesite}" in lower
     assert "max-age=" in lower
     assert "path=/" in lower
-    assert "secure" not in lower
+    assert ("secure" in lower) == cookie_secure

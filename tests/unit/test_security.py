@@ -76,4 +76,3 @@ def test_decode_token_with_wrong_secret(access_secret, refresh_secret):
 
     with pytest.raises(TokenInvalidError):
         JWTManager.decode_token(token, refresh_secret)
-

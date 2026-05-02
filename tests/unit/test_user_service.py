@@ -23,6 +23,7 @@ async def test_register_new_user_success(dummy_session):
     assert user.username == "tester"
     assert user.email == "tester@example.com"
     assert user.password_hash != "password"
+    assert dummy_session.rollback_called is False
 
 
 @pytest.mark.asyncio
@@ -37,6 +38,7 @@ async def test_register_duplicate_email(dummy_session):
 
     with pytest.raises(UserAlreadyExists):
         await service.create_user(dummy_session, reg_data)
+    assert dummy_session.rollback_called is True
 
 
 @pytest.mark.asyncio
@@ -51,6 +53,7 @@ async def test_register_duplicate_username(dummy_session):
 
     with pytest.raises(UserAlreadyExists):
         await service.create_user(dummy_session, reg_data)
+    assert dummy_session.rollback_called is True
 
 
 @pytest.mark.asyncio
