@@ -13,9 +13,7 @@ async def test_register_new_user_success(dummy_session):
     service = UserService(FakeUserCRUD())
 
     reg_data = UserRegister(
-        username="tester",
-        email="tester@example.com",
-        password=SecretStr("password")
+        username="tester", email="tester@example.com", password=SecretStr("password")
     )
 
     user = await service.create_user(dummy_session, reg_data)
@@ -31,9 +29,7 @@ async def test_register_duplicate_email(dummy_session):
     service = UserService(FakeUserCRUD())
 
     reg_data = UserRegister(
-        username="tester",
-        email="duplicate@example.com",
-        password=SecretStr("password")
+        username="tester", email="duplicate@example.com", password=SecretStr("password")
     )
 
     with pytest.raises(UserAlreadyExists):
@@ -46,9 +42,7 @@ async def test_register_duplicate_username(dummy_session):
     service = UserService(FakeUserCRUD())
 
     reg_data = UserRegister(
-        username="duplicate",
-        email="tester@example.com",
-        password=SecretStr("password")
+        username="duplicate", email="tester@example.com", password=SecretStr("password")
     )
 
     with pytest.raises(UserAlreadyExists):

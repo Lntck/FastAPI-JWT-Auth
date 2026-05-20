@@ -66,10 +66,7 @@ def test_decode_invalid_token(access_secret):
 
 def test_decode_token_with_wrong_secret(access_secret, refresh_secret):
     token, _ = JWTManager.create_token(
-        {
-            "sub": "1",
-            "type": "access"
-        },
+        {"sub": "1", "type": "access"},
         access_secret,
         10,
     )

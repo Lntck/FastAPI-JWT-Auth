@@ -2,10 +2,14 @@ import pytest
 from fakeredis.aioredis import FakeRedis
 
 from app.core import Settings
-from app.exceptions import InvalidCredentials, TokenExpiredError, TokenInvalidError, UserNotFound
+from app.exceptions import (
+    InvalidCredentials,
+    TokenExpiredError,
+    TokenInvalidError,
+    UserNotFound,
+)
 from app.services import AuthService, UserService
 from tests.fakes import FakeUserCRUD
-
 
 
 def test_validate_token_payload_ok():
@@ -83,8 +87,12 @@ async def test_auth_user_success(test_settings: Settings, dummy_session):
         "password",
     )
 
-    access_payload = service.jwt_manager.decode_token(access_token, test_settings.access_secret)
-    refresh_payload = service.jwt_manager.decode_token(refresh_token, test_settings.refresh_secret)
+    access_payload = service.jwt_manager.decode_token(
+        access_token, test_settings.access_secret
+    )
+    refresh_payload = service.jwt_manager.decode_token(
+        refresh_token, test_settings.refresh_secret
+    )
 
     assert access_payload["sub"] == "1"
     assert access_payload["type"] == service.ACCESS_TOKEN_TYPE
@@ -104,7 +112,9 @@ async def test_auth_user_invalid_password(test_settings: Settings, dummy_session
     redis_client = FakeRedis()
 
     with pytest.raises(InvalidCredentials):
-        await service.auth_user(dummy_session, redis_client, "duplicate", "wrongpassword")
+        await service.auth_user(
+            dummy_session, redis_client, "duplicate", "wrongpassword"
+        )
     assert await redis_client.keys("*") == []
 
 
@@ -128,7 +138,9 @@ async def test_refresh_token_success(test_settings: Settings, dummy_session):
         test_settings.refresh_secret,
         10,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     access_token, new_refresh_token = await service.refresh_token(
         dummy_session,
@@ -138,8 +150,12 @@ async def test_refresh_token_success(test_settings: Settings, dummy_session):
 
     assert await redis_client.get(f"rft:{jti}") is None
 
-    access_payload = service.jwt_manager.decode_token(access_token, test_settings.access_secret)
-    new_refresh_payload = service.jwt_manager.decode_token(new_refresh_token, test_settings.refresh_secret)
+    access_payload = service.jwt_manager.decode_token(
+        access_token, test_settings.access_secret
+    )
+    new_refresh_payload = service.jwt_manager.decode_token(
+        new_refresh_token, test_settings.refresh_secret
+    )
 
     assert access_payload["type"] == service.ACCESS_TOKEN_TYPE
     assert await redis_client.get(f"rft:{new_refresh_payload['jti']}") is not None
@@ -171,7 +187,9 @@ async def test_refresh_token_expired(test_settings: Settings, dummy_session):
         test_settings.refresh_secret,
         -1,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     with pytest.raises(TokenExpiredError):
         await service.refresh_token(dummy_session, redis_client, refresh_token)
@@ -189,7 +207,9 @@ async def test_refresh_token_wrong_type(test_settings: Settings, dummy_session):
         test_settings.refresh_secret,
         10,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     with pytest.raises(TokenInvalidError):
         await service.refresh_token(dummy_session, redis_client, refresh_token)
@@ -207,7 +227,9 @@ async def test_refresh_token_user_missing(test_settings: Settings, dummy_session
         test_settings.refresh_secret,
         10,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     with pytest.raises(TokenInvalidError):
         await service.refresh_token(dummy_session, redis_client, refresh_token)
@@ -225,7 +247,9 @@ async def test_remove_refresh_token_success(test_settings: Settings, dummy_sessi
         test_settings.refresh_secret,
         10,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     await service.remove_refresh_token(dummy_session, redis_client, refresh_token)
 
@@ -233,7 +257,9 @@ async def test_remove_refresh_token_success(test_settings: Settings, dummy_sessi
 
 
 @pytest.mark.asyncio
-async def test_remove_refresh_token_user_missing(test_settings: Settings, dummy_session):
+async def test_remove_refresh_token_user_missing(
+    test_settings: Settings, dummy_session
+):
     service = AuthService(UserService(FakeUserCRUD()), test_settings)
     redis_client = FakeRedis()
 
@@ -242,7 +268,9 @@ async def test_remove_refresh_token_user_missing(test_settings: Settings, dummy_
         test_settings.refresh_secret,
         10,
     )
-    await redis_client.setex(f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid")
+    await redis_client.setex(
+        f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
+    )
 
     with pytest.raises(TokenInvalidError):
         await service.remove_refresh_token(dummy_session, redis_client, refresh_token)

@@ -6,13 +6,13 @@ from app.core import get_settings
 
 class DatabaseHelper:
     def __init__(
-            self,
-            url: str,
-            echo: bool = False,
-            echo_pool: bool = False,
-            pool_size: int = 5,
-            max_overflow: int = 10,
-            ):
+        self,
+        url: str,
+        echo: bool = False,
+        echo_pool: bool = False,
+        pool_size: int = 5,
+        max_overflow: int = 10,
+    ):
         self.engine = create_async_engine(
             url=url,
             echo=echo,
@@ -26,10 +26,10 @@ class DatabaseHelper:
             autocommit=False,
             expire_on_commit=False,
         )
-    
+
     async def dispose(self) -> None:
         await self.engine.dispose()
-    
+
     async def session_getter(self) -> AsyncGenerator[AsyncSession, None]:
         async with self.session_factory() as session:
             yield session

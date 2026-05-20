@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class UserService:
     def __init__(self, user_crud: UserCRUDProtocol):
         self.user_crud = user_crud
-    
+
     async def create_user(self, session: AsyncSession, reg_data: UserRegister) -> User:
         hashed_psw = hash_password(reg_data.password.get_secret_value())
 
@@ -38,7 +38,7 @@ class UserService:
         if not user:
             raise UserNotFound()
         return user
-    
+
     async def get_all_users(self, session: AsyncSession) -> list[User]:
         users = await self.user_crud.get_all_users(session)
         return list(users)

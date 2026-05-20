@@ -9,9 +9,11 @@ class UserBase(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # Schema for user registration data | Input
 class UserRegister(UserBase):
     password: SecretStr = Field(..., min_length=8, max_length=24)
+
 
 # Schema for reading user data | Output
 class UserRead(UserBase):
@@ -20,6 +22,7 @@ class UserRead(UserBase):
     role: str
     created_at: datetime
     updated_at: datetime
+
 
 # Schema for token response | Output
 class Token(BaseModel):

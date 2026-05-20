@@ -6,7 +6,6 @@ from app.schemas import UserRead
 from app.services import UserService
 from app.db import db_helper
 
-
 router = APIRouter()
 
 

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         "uq": "uq_%(table_name)s_%(column_0_name)s",
         "ck": "ck_%(table_name)s_%(constraint_name)s",
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s"
+        "pk": "pk_%(table_name)s",
     }
     access_secret: str = "CHANGE_ME_ACCESS_SECRET_MIN_32_CHARS"
     refresh_secret: str = "CHANGE_ME_REFRESH_SECRET_MIN_32_CHARS"
@@ -52,10 +52,7 @@ class Settings(BaseSettings):
             raise ValueError("JWT secret must be at least 32 characters long")
         return value
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        frozen=True
-    )
+    model_config = SettingsConfigDict(env_file=".env", frozen=True)
 
 
 @lru_cache

@@ -15,6 +15,4 @@ class RedisHelper:
 
 
 settings = get_settings()
-redis_helper = RedisHelper(
-    url=settings.redis_url
-)
+redis_helper = RedisHelper(url=settings.redis_url)

@@ -12,13 +12,15 @@ class UserCRUD:
         await session.commit()
         await session.refresh(user)
         return user
-    
+
     async def get_by_id(self, session: AsyncSession, user_id: int) -> User | None:
         stmt = select(User).where(User.id == user_id)
         result = await session.scalar(stmt)
         return result
 
-    async def get_by_username(self, session: AsyncSession, username: str) -> User | None:
+    async def get_by_username(
+        self, session: AsyncSession, username: str
+    ) -> User | None:
         stmt = select(User).where(User.username == username)
         result = await session.scalar(stmt)
         return result

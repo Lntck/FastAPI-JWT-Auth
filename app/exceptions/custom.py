@@ -1,5 +1,6 @@
 class AppException(Exception):
     """Base application exception"""
+
     status_code: int = 500
     detail: str = "Internal server error"
 
@@ -19,9 +20,11 @@ class InvalidCredentials(AppException):
     status_code = 401
     detail = "Invalid username or password"
 
+
 class TokenExpiredError(AppException):
     status_code = 401
     detail = "Token has expired"
+
 
 class TokenInvalidError(AppException):
     status_code = 401

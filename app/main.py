@@ -6,7 +6,6 @@ from app.core import API_V1_PREFIX, get_settings
 from app.exceptions import register_exception_handlers
 from app.lifespan import lifespan
 
-
 settings = get_settings()
 
 app = FastAPI(

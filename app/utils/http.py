@@ -3,7 +3,9 @@ from fastapi import Response
 from app.services import AuthService
 
 
-def set_refresh_cookie(response: Response, refresh_token: str, service: AuthService) -> None:
+def set_refresh_cookie(
+    response: Response, refresh_token: str, service: AuthService
+) -> None:
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,

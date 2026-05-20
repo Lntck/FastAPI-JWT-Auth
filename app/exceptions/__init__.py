@@ -8,7 +8,6 @@ from .custom import (
 )
 from .handlers import register_exception_handlers
 
-
 __all__ = (
     "AppException",
     "InvalidCredentials",

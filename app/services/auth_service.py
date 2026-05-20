@@ -22,7 +22,9 @@ class AuthService:
             raise TokenInvalidError("Refresh token is invalid")
 
     @staticmethod
-    def _validate_token_payload(payload: dict | None, expected_type: str, invalid_message: str) -> int:
+    def _validate_token_payload(
+        payload: dict | None, expected_type: str, invalid_message: str
+    ) -> int:
         if not payload:
             raise TokenInvalidError(invalid_message)
 
@@ -38,7 +40,7 @@ class AuthService:
 
         if not isinstance(token_jti, str) or not token_jti:
             raise TokenInvalidError(invalid_message)
-        
+
         try:
             user_id = int(user_id)
         except ValueError:
@@ -69,8 +71,10 @@ class AuthService:
             self.settings.refresh_token_expire_m,
         )
 
-        await redis_client.setex(f"rft:{ref_jti}", self.settings.refresh_token_expire_m * 60, "valid")
-        
+        await redis_client.setex(
+            f"rft:{ref_jti}", self.settings.refresh_token_expire_m * 60, "valid"
+        )
+
         return access_token, refresh_token
 
     async def refresh_token(
@@ -79,8 +83,12 @@ class AuthService:
         redis_client: redis.Redis,
         refresh_token: str,
     ) -> tuple[str, str]:
-        payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
-        user_id = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
+        payload = self.jwt_manager.decode_token(
+            refresh_token, self.settings.refresh_secret
+        )
+        user_id = self._validate_token_payload(
+            payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token"
+        )
         token_jti = payload["jti"]
 
         await self._consume_refresh_token(redis_client, token_jti)
@@ -101,18 +109,24 @@ class AuthService:
             self.settings.refresh_token_expire_m,
         )
 
-        await redis_client.setex(f"rft:{new_ref_jti}", self.settings.refresh_token_expire_m * 60, "valid")
+        await redis_client.setex(
+            f"rft:{new_ref_jti}", self.settings.refresh_token_expire_m * 60, "valid"
+        )
 
         return new_access_token, new_refresh_token
-    
+
     async def remove_refresh_token(
         self,
         session: AsyncSession,
         redis_client: redis.Redis,
         refresh_token: str,
     ) -> None:
-        payload = self.jwt_manager.decode_token(refresh_token, self.settings.refresh_secret)
-        user_id = self._validate_token_payload(payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token")
+        payload = self.jwt_manager.decode_token(
+            refresh_token, self.settings.refresh_secret
+        )
+        user_id = self._validate_token_payload(
+            payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token"
+        )
         token_jti = payload["jti"]
 
         await self._consume_refresh_token(redis_client, token_jti)
@@ -124,4 +138,6 @@ class AuthService:
 
     def get_user_id_from_token(self, token: str) -> int:
         payload = self.jwt_manager.decode_token(token, self.settings.access_secret)
-        return self._validate_token_payload(payload, self.ACCESS_TOKEN_TYPE, "Invalid access token")
+        return self._validate_token_payload(
+            payload, self.ACCESS_TOKEN_TYPE, "Invalid access token"
+        )

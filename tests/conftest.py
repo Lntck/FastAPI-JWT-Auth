@@ -6,9 +6,11 @@ from app.core import Settings
 def access_secret():
     return "a" * 32
 
+
 @pytest.fixture()
 def refresh_secret():
     return "b" * 32
+
 
 @pytest.fixture()
 def test_settings(access_secret, refresh_secret) -> Settings:
@@ -21,6 +23,7 @@ def test_settings(access_secret, refresh_secret) -> Settings:
         cookie_samesite="strict",
     )
 
+
 @pytest.fixture()
 def dummy_session():
     class DummySession:
@@ -29,4 +32,5 @@ def dummy_session():
 
         async def rollback(self):
             self.rollback_called = True
+
     return DummySession()
