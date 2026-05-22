@@ -18,11 +18,11 @@ RUN poetry export \
     --only main \
     --without-hashes \
     --format=requirements.txt \
-    --output requirements.txt
-
-RUN pip install --no-cache-dir \
-    --prefix=/install \
-    -r requirements.txt
+    --output /tmp/requirements.txt \
+    && pip install --no-cache-dir \
+        --prefix=/install \
+        --ignore-installed \
+        -r /tmp/requirements.txt
 
 
 # Runtime stage
@@ -50,6 +50,6 @@ USER fastapi
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/live" || exit 1
+    CMD curl -f http://localhost:8000/health/live || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
