@@ -10,12 +10,12 @@ router = APIRouter()
 
 
 @router.get("/health/live")
-async def health():
+async def liveness_probe():
     return {"status": "ok"}
 
 
 @router.get("/health/ready")
-async def ready():
+async def readiness_probe():
     try:
         postgres_status = await asyncio.wait_for(db_helper.ping(), timeout=1)
     except Exception as e:
