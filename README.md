@@ -60,6 +60,7 @@ Implements secure token-based authentication with access/refresh token rotation,
 |- poetry.lock
 |- pytest.ini
 |- .env.template
+|- .env.docker
 |- README.md
 ```
 
@@ -76,8 +77,12 @@ Implements secure token-based authentication with access/refresh token rotation,
 
 ## API Endpoints
 
+Auth endpoints are under `/api/v1`. Health endpoints are top-level.
+
 | Method | Path | Auth | Description |
 |---|---|---|---|
+| GET | `/health/live` | No | Liveness probe |
+| GET | `/health/ready` | No | Readiness probe (checks Postgres + Redis) |
 | POST | `/api/v1/register` | No | Register new user |
 | POST | `/api/v1/login` | No | Login with username/password form |
 | POST | `/api/v1/refresh` | No | Rotate refresh token and issue new access token |
@@ -166,6 +171,31 @@ Open:
 
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - ReDoc: `http://127.0.0.1:8000/redoc`
+
+## Quick Start (Docker Compose)
+
+1. Update `.env.docker` with real secrets.
+2. Start services:
+
+```bash
+docker compose up --build
+```
+
+3. Run migrations:
+
+```bash
+docker compose run --rm app alembic upgrade head
+```
+
+Makefile shortcuts:
+
+```bash
+make up
+make down
+make migrate
+make makemigrations m="describe change"
+make logs
+```
 
 ## Testing
 
