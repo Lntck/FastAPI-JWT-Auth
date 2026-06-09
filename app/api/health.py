@@ -17,13 +17,13 @@ async def liveness_probe():
 @router.get("/health/ready")
 async def readiness_probe():
     try:
-        postgres_status = await asyncio.wait_for(db_helper.ping(), timeout=1)
+        postgres_status = await asyncio.wait_for(db_helper.ping(), timeout=3)
     except Exception as e:
         logger.warning(f"Postgres health check failed: {e}")
         postgres_status = False
 
     try:
-        redis_status = await asyncio.wait_for(redis_helper.ping(), timeout=1)
+        redis_status = await asyncio.wait_for(redis_helper.ping(), timeout=3)
     except Exception as e:
         logger.warning(f"Redis health check failed: {e}")
         redis_status = False
