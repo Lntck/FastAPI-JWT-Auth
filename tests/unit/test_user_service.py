@@ -1,11 +1,10 @@
 import pytest
-
-from app.services import UserService
-from app.schemas import UserRegister
-from app.exceptions import UserAlreadyExists, UserNotFound
-from tests.fakes import FakeUserCRUD
-
 from pydantic import SecretStr
+
+from app.exceptions import UserAlreadyExists, UserNotFound
+from app.schemas import UserRegister
+from app.services import UserService
+from tests.fakes import FakeUserCRUD
 
 
 @pytest.mark.asyncio

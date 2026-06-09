@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, EmailStr, SecretStr, field_validator
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 
 # Base schema for user data

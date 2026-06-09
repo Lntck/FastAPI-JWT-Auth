@@ -1,11 +1,11 @@
-from app.core import hash_password
-from app.exceptions import UserNotFound, UserAlreadyExists
-from app.schemas import UserRegister
-from app.models import User
-from app.services.protocols import UserCRUDProtocol
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core import hash_password
+from app.exceptions import UserAlreadyExists, UserNotFound
+from app.models import User
+from app.schemas import UserRegister
+from app.services.protocols import UserCRUDProtocol
 
 
 class UserService:

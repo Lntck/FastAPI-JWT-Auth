@@ -3,8 +3,8 @@ import asyncio
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from app.db import db_helper, redis_helper
 from app.core import logger
+from app.db import db_helper, redis_helper
 
 router = APIRouter()
 

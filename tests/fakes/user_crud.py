@@ -1,6 +1,7 @@
-from app.models import User
-from app.core import hash_password
 from sqlalchemy.exc import IntegrityError
+
+from app.core import hash_password
+from app.models import User
 
 
 class FakeUserCRUD:

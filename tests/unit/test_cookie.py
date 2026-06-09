@@ -3,7 +3,6 @@ from fastapi import Response
 
 from app.services import AuthService, UserService
 from app.utils.http import set_refresh_cookie
-
 from tests.fakes import FakeUserCRUD
 
 

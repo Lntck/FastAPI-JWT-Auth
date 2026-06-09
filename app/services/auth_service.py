@@ -1,5 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import JWTManager, Settings, verify_password
 from app.exceptions import InvalidCredentials, TokenInvalidError, UserNotFound

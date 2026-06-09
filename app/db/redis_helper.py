@@ -16,7 +16,7 @@ class RedisHelper:
     async def ping(self) -> bool:
         try:
             return bool(await self.client.execute_command("PING"))
-        except Exception as e:
+        except Exception:
             return False
 
 

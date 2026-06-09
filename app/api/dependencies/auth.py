@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.core import API_V1_PREFIX
 from app.services import AuthService
+
 from .providers import get_auth_service
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{API_V1_PREFIX}/login")

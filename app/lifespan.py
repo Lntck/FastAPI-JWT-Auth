@@ -1,5 +1,6 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 
 from app.db import db_helper, redis_helper
 

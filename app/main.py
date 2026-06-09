@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
+from app.api import health_router, v1_router
 from app.api.middlewares import limiter
-from app.api import v1_router, health_router
 from app.core import API_V1_PREFIX, get_settings
 from app.exceptions import register_exception_handlers
 from app.lifespan import lifespan

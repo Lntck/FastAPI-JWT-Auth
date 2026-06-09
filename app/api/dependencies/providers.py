@@ -3,6 +3,7 @@ from fastapi import Depends
 from app.core import Settings, get_settings
 from app.crud import UserCRUD
 from app.services import AuthService, UserService
+
 from .repositories import get_user_crud
 
 

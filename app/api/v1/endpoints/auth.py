@@ -1,17 +1,17 @@
 from contextlib import suppress
 
-from fastapi import APIRouter, Depends, status, Request, Response
+import redis.asyncio as redis
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as redis
 
 from app.api.dependencies import get_auth_service, get_user_service
 from app.api.middlewares import limiter
+from app.db import db_helper, redis_helper
 from app.exceptions import TokenExpiredError, TokenInvalidError
-from app.schemas import Token, UserRegister, UserRead
+from app.schemas import Token, UserRead, UserRegister
 from app.services import AuthService, UserService
 from app.utils import set_refresh_cookie
-from app.db import db_helper, redis_helper
 
 router = APIRouter()
 

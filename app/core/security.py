@@ -1,8 +1,9 @@
-import jwt
-from datetime import datetime, timezone, timedelta
-from uuid import uuid4
-from passlib.context import CryptContext
+from datetime import datetime, timedelta, timezone
 from typing import cast
+from uuid import uuid4
+
+import jwt
+from passlib.context import CryptContext
 
 from app.exceptions import TokenExpiredError, TokenInvalidError
 
