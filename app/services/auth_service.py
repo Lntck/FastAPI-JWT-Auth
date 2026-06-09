@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import JWTManager, Settings, verify_password
 from app.exceptions import InvalidCredentials, TokenInvalidError, UserNotFound
-from app.services import UserService
+from app.services.user_service import UserService
 
 
 class AuthService:
