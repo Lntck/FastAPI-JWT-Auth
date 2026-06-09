@@ -2,6 +2,7 @@ import jwt
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from passlib.context import CryptContext
+from typing import cast
 
 from app.exceptions import TokenExpiredError, TokenInvalidError
 
@@ -9,11 +10,11 @@ myctx = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    return myctx.hash(password)
+    return cast(str, myctx.hash(password))
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return myctx.verify(password, password_hash)
+    return cast(bool, myctx.verify(password, password_hash))
 
 
 class JWTManager:
