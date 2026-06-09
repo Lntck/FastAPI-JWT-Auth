@@ -1,8 +1,8 @@
-"""create users table
+"""Create Users table
 
-Revision ID: a67f0fdc19e2
+Revision ID: bae2b0d12475
 Revises:
-Create Date: 2026-04-18 20:46:05.847057
+Create Date: 2026-06-09 22:34:34.686720
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = "a67f0fdc19e2"
+revision: str = "bae2b0d12475"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -22,7 +22,6 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
         "users",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("username", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("password_hash", sa.String(), nullable=False),
@@ -40,12 +39,19 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_users")),
         sa.UniqueConstraint("email", name=op.f("uq_users_email")),
-        sa.UniqueConstraint("username", name=op.f("uq_users_username")),
+    )
+    op.create_index(
+        "ix_users_username_lower",
+        "users",
+        [sa.literal_column("lower(username)")],
+        unique=True,
     )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_index("ix_users_username_lower", table_name="users")
     op.drop_table("users")

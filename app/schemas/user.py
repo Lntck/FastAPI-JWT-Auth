@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, EmailStr, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, EmailStr, SecretStr, field_validator
 from datetime import datetime
 
 
@@ -8,6 +8,11 @@ class UserBase(BaseModel):
     email: EmailStr
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        return value.lower()
 
 
 # Schema for user registration data | Input

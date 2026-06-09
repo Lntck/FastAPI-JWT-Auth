@@ -38,7 +38,7 @@ async def login(
     service: AuthService = Depends(get_auth_service),
 ):
     access_token, refresh_token = await service.auth_user(
-        session, redis_client, form_data.username, form_data.password
+        session, redis_client, form_data.username.lower(), form_data.password
     )
 
     set_refresh_cookie(response, refresh_token, service)

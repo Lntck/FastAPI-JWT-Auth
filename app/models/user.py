@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, func, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 
@@ -8,7 +8,7 @@ from .base import Base
 class User(Base):
     __tablename__ = "users"
 
-    username: Mapped[str] = mapped_column(unique=True, nullable=False)
+    username: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
 
     password_hash: Mapped[str] = mapped_column(nullable=False)
@@ -24,4 +24,8 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        Index("ix_users_username_lower", func.lower(username), unique=True),
     )
