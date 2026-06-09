@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,6 +35,12 @@ jobs:
 
       - name: Check formatting
         run: poetry run black --check .
+
+      - name: Run Ruff
+        run: poetry run ruff check .
+
+      - name: Run Mypy
+        run: poetry run mypy app
 
       - name: Run tests
         run: poetry run pytest
