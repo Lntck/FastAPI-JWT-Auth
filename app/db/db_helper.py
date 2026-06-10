@@ -1,6 +1,7 @@
 from typing import AsyncGenerator
+
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core import get_settings
 
@@ -40,7 +41,7 @@ class DatabaseHelper:
             async with self.session_factory() as session:
                 await session.execute(text("SELECT 1"))
             return True
-        except Exception as e:
+        except Exception:
             return False
 
 
