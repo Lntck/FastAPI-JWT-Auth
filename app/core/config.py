@@ -7,7 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     debug: bool = False
-    cors_origins: list[str] = ["http://localhost", "http://localhost:8000", "http://127.0.0.1:8000"]
+    cors_origins: list[str] = [
+        "http://localhost",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
     database_url: str = "DATABASE_URL"
     redis_url: str = "REDIS_URL"
     access_secret: str = "CHANGE_ME_ACCESS_SECRET_MIN_32_CHARS"

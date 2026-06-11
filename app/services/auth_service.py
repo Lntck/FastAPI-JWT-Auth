@@ -129,7 +129,7 @@ class AuthService:
         _, token_jti = self._validate_token_payload(
             payload, self.REFRESH_TOKEN_TYPE, "Invalid refresh token"
         )
-        
+
         await self._consume_refresh_token(redis_client, token_jti)
 
     def get_user_id_from_token(self, token: str) -> int:
