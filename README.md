@@ -16,6 +16,8 @@ Implements secure token-based authentication with access/refresh token rotation,
 - Alembic migration setup
 - Centralized exception handling
 - Basic rate limiting middleware (SlowAPI)
+- CORS middleware configuration
+- Automated CI/CD pipelines (GitHub Actions)
 
 ## Tech Stack
 
@@ -28,6 +30,8 @@ Implements secure token-based authentication with access/refresh token rotation,
 - PyJWT
 - Passlib (argon2)
 - Pydantic Settings
+- Ruff, Mypy, and Black (Linting & Formatting)
+- GitHub Actions (CI/CD)
 
 ## Project Structure
 
@@ -141,6 +145,7 @@ Set the required variables:
 | Variable | Required | Notes |
 |---|---|---|
 | `DEBUG` | No | `true` or `false` |
+| `CORS_ORIGINS` | No | JSON array of allowed origins |
 | `DATABASE_URL` | Yes | Must start with `postgresql+asyncpg://` or `postgres+asyncpg://` |
 | `REDIS_URL` | Yes | Must start with `redis://` or `rediss://` |
 | `ACCESS_SECRET` | Yes | Min length: 32 |
@@ -197,6 +202,12 @@ make makemigrations m="describe change"
 make logs
 ```
 
+For production deployment (e.g., on a VPS), a dedicated compose file is provided:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
 ## Testing
 
 Run all tests:
@@ -217,6 +228,18 @@ Format code with Black:
 
 ```bash
 poetry run black .
+```
+
+Lint code with Ruff:
+
+```bash
+poetry run ruff check .
+```
+
+Check types with Mypy:
+
+```bash
+poetry run mypy app
 ```
 
 ## Request Examples
