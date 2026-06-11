@@ -6,19 +6,19 @@ from app.exceptions import (
     InvalidCredentials,
     TokenExpiredError,
     TokenInvalidError,
-    UserNotFound,
 )
 from app.services import AuthService, UserService
 from tests.fakes import FakeUserCRUD
 
 
 def test_validate_token_payload_ok():
-    user_id = AuthService._validate_token_payload(
+    user_id, token_jti = AuthService._validate_token_payload(
         {"sub": "1", "type": "access", "jti": "abc"},
         "access",
         "invalid",
     )
     assert user_id == 1
+    assert token_jti == "abc"
 
 
 @pytest.mark.parametrize(
@@ -123,7 +123,7 @@ async def test_auth_user_user_not_found(test_settings: Settings, dummy_session):
     service = AuthService(UserService(FakeUserCRUD()), test_settings)
     redis_client = FakeRedis()
 
-    with pytest.raises(UserNotFound):
+    with pytest.raises(InvalidCredentials):
         await service.auth_user(dummy_session, redis_client, "missing", "password")
     assert await redis_client.keys("*") == []
 
@@ -272,7 +272,6 @@ async def test_remove_refresh_token_user_missing(
         f"rft:{jti}", test_settings.refresh_token_expire_m * 60, "valid"
     )
 
-    with pytest.raises(TokenInvalidError):
-        await service.remove_refresh_token(dummy_session, redis_client, refresh_token)
+    await service.remove_refresh_token(dummy_session, redis_client, refresh_token)
 
     assert await redis_client.get(f"rft:{jti}") is None
