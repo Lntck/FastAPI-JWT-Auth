@@ -45,7 +45,7 @@ class Settings(BaseSettings):
             raise ValueError("JWT secret must be at least 32 characters long")
         return value
 
-    model_config = SettingsConfigDict(env_file=".env", frozen=True)
+    model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
 
 
 @lru_cache
