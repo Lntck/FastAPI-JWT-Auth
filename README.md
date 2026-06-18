@@ -2,7 +2,7 @@
 
 Production-oriented JWT authentication service built with FastAPI, PostgreSQL, and Redis.
 
-Implements secure token-based authentication with access/refresh token rotation, Redis-backed revocation, and a fully async layered architecture designed for scalability and maintainability.
+Implements secure JWT authentication with access/refresh token rotation, Redis-backed revocation, Role-Based Access Control (RBAC), and a fully async layered architecture designed for scalability and maintainability.
 
 ## What Is Implemented
 
@@ -10,6 +10,9 @@ Implements secure token-based authentication with access/refresh token rotation,
 - JWT authentication:
   - Access token in response body
   - Refresh token in `HttpOnly` cookie
+- Role-Based Access Control (RBAC)
+- User role embedded into JWT access tokens
+- Role-based endpoint protection via FastAPI dependencies
 - Refresh token rotation with one-time use semantics via Redis `GETDEL`
 - Password hashing with Argon2 (Passlib)
 - Async SQLAlchemy + asyncpg
@@ -48,6 +51,7 @@ Implements secure token-based authentication with access/refresh token rotation,
 |  |  |- middlewares/
 |  |  |- v1/
 |  |  |  |- endpoints/
+|  |- auth/
 |  |- core/
 |  |- crud/
 |  |- db/
@@ -76,8 +80,10 @@ Implements secure token-based authentication with access/refresh token rotation,
    - `access_token` in JSON response
    - `refresh_token` in secure `HttpOnly` cookie
 4. Use access token for protected endpoints (Bearer auth)
-5. Refresh access token (`POST /api/v1/refresh`) using refresh cookie
-6. Logout (`POST /api/v1/logout`) revokes refresh token in Redis and clears cookie
+5. Access token carries authenticated user information including assigned role
+6. Protected endpoints can enforce role-based authorization
+7. Refresh access token (`POST /api/v1/refresh`) using refresh cookie
+8. Logout (`POST /api/v1/logout`) revokes refresh token in Redis and clears cookie
 
 ## API Endpoints
 
@@ -323,7 +329,4 @@ poetry run alembic downgrade -1
 
 ## Current Limitations
 
-- No email verification flow
-- No password reset flow
-- No role-based authorization checks (role field exists but is not enforced)
-- Test coverage is unit-focused; no integration tests yet
+- Test coverage is unit-focused; no end-to-end tests yet
