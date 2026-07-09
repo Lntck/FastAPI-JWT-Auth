@@ -2,7 +2,7 @@
 
 Production-oriented JWT authentication service built with FastAPI, PostgreSQL, and Redis.
 
-Implements secure JWT authentication with access/refresh token rotation, Redis-backed revocation, Role-Based Access Control (RBAC), and a fully async layered architecture designed for scalability and maintainability.
+Implements secure JWT authentication with access/refresh token rotation, Redis-backed refresh token revocation, Role-Based Access Control (RBAC), and a fully async, layered architecture designed for scalability and maintainability.
 
 ## What Is Implemented
 
@@ -10,21 +10,25 @@ Implements secure JWT authentication with access/refresh token rotation, Redis-b
 - JWT authentication:
   - Access token in response body
   - Refresh token in `HttpOnly` cookie
-- Role-Based Access Control (RBAC)
-- User role embedded into JWT access tokens
-- Role-based endpoint protection via FastAPI dependencies
 - Refresh token rotation with one-time use semantics via Redis `GETDEL`
+- Role-Based Access Control (RBAC):
+  - User role embedded into JWT access tokens
+  - Hierarchical role levels (`user` < `admin`)
+  - Role-based endpoint protection via the `RequireRole` dependency
 - Password hashing with Argon2 (Passlib)
-- Async SQLAlchemy + asyncpg
-- Alembic migration setup
+- Async SQLAlchemy 2.0 + asyncpg
+- Alembic migration setup (async)
+- Infrastructure lifecycle managed via FastAPI `lifespan` and `app.state`
+- Dependency injection with typed CRUD protocols
 - Centralized exception handling
-- Basic rate limiting middleware (SlowAPI)
+- Rate limiting (SlowAPI)
 - CORS middleware configuration
+- Liveness / readiness health probes
 - Automated CI/CD pipelines (GitHub Actions)
 
 ## Tech Stack
 
-- Python
+- Python 3.12+
 - FastAPI
 - SQLAlchemy (async)
 - PostgreSQL (asyncpg)
@@ -33,8 +37,27 @@ Implements secure JWT authentication with access/refresh token rotation, Redis-b
 - PyJWT
 - Passlib (argon2)
 - Pydantic Settings
-- Ruff, Mypy, and Black (Linting & Formatting)
+- SlowAPI (rate limiting)
+- Ruff, Mypy, and Black (linting & formatting)
+- Pytest (unit tests)
+- Docker & Docker Compose
 - GitHub Actions (CI/CD)
+
+## Architecture
+
+The project follows a layered architecture with clear separation of concerns:
+
+```
+API (endpoints) -> Services (business logic) -> CRUD (data access) -> Models
+```
+
+- **Endpoints** are thin and delegate to services.
+- **Services** contain business logic and depend on CRUD via a `Protocol`
+  (`app/protocols/user.py`), which keeps them decoupled and easy to test.
+- **CRUD** performs data access only; transaction commit/rollback is centralized
+  in the database session dependency.
+- **Infrastructure** (database engine, Redis client) is created once on startup
+  in `app/lifespan.py`, stored on `app.state`, and accessed through dependencies.
 
 ## Project Structure
 
@@ -44,31 +67,37 @@ Implements secure JWT authentication with access/refresh token rotation, Redis-b
 |  |- env.py
 |  |- versions/
 |- app/
-|  |- main.py
-|  |- lifespan.py
+|  |- main.py              # App factory, middleware, routers
+|  |- lifespan.py          # Startup/shutdown: db & redis clients on app.state
 |  |- api/
-|  |  |- dependencies/
-|  |  |- middlewares/
+|  |  |- health.py         # Liveness / readiness probes
 |  |  |- v1/
-|  |  |  |- endpoints/
-|  |- auth/
-|  |- core/
-|  |- crud/
-|  |- db/
-|  |- exceptions/
-|  |- models/
-|  |- schemas/
-|  |- services/
-|  |- utils/
+|  |  |  |- router.py
+|  |  |  |- endpoints/     # auth, users
+|  |- auth/                # Auth dependencies, RBAC permissions, token schema
+|  |- core/                # Config, security, constants, limiter, logger
+|  |- crud/                # Data access layer
+|  |- db/                  # DatabaseClient (postgres), RedisClient
+|  |- dependencies/        # DI: db session, redis, crud, services
+|  |- enums/               # Role enum with hierarchical levels
+|  |- exceptions/          # Custom exceptions + handlers
+|  |- models/              # SQLAlchemy models
+|  |- protocols/           # Typed CRUD protocols for DI
+|  |- schemas/             # Pydantic schemas
+|  |- services/            # Business logic (user, auth)
+|  |- utils/               # Helpers (cookie handling)
 |- tests/
 |  |- fakes/
 |  |- unit/
-|- alembic.ini
-|- pyproject.toml
-|- poetry.lock
-|- pytest.ini
 |- .env.template
-|- .env.docker
+|- alembic.ini
+|- docker-compose.yml       # Local development
+|- docker-compose.prod.yml  # Production
+|- Dockerfile
+|- Makefile
+|- poetry.lock
+|- pyproject.toml
+|- pytest.ini
 |- README.md
 ```
 
@@ -77,122 +106,85 @@ Implements secure JWT authentication with access/refresh token rotation, Redis-b
 1. Register a user (`POST /api/v1/register`)
 2. Login (`POST /api/v1/login`)
 3. Receive:
-   - `access_token` in JSON response
-   - `refresh_token` in secure `HttpOnly` cookie
-4. Use access token for protected endpoints (Bearer auth)
-5. Access token carries authenticated user information including assigned role
-6. Protected endpoints can enforce role-based authorization
-7. Refresh access token (`POST /api/v1/refresh`) using refresh cookie
-8. Logout (`POST /api/v1/logout`) revokes refresh token in Redis and clears cookie
+   - `access_token` in the JSON response
+   - `refresh_token` in a secure `HttpOnly` cookie
+4. Use the access token for protected endpoints (Bearer auth)
+5. The access token carries authenticated user information, including the assigned role
+6. Protected endpoints enforce role-based authorization via `RequireRole`
+7. Refresh the access token (`POST /api/v1/refresh`) using the refresh cookie
+   (the old refresh token is rotated and invalidated)
+8. Logout (`POST /api/v1/logout`) revokes the refresh token in Redis and clears the cookie
 
 ## API Endpoints
 
-Auth endpoints are under `/api/v1`. Health endpoints are top-level.
+Auth and user endpoints are under `/api/v1`. Health endpoints are top-level.
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/health/live` | No | Liveness probe |
-| GET | `/health/ready` | No | Readiness probe (checks Postgres + Redis) |
-| POST | `/api/v1/register` | No | Register new user |
-| POST | `/api/v1/login` | No | Login with username/password form |
-| POST | `/api/v1/refresh` | No | Rotate refresh token and issue new access token |
-| POST | `/api/v1/logout` | No | Revoke current refresh token and clear cookie |
-| GET | `/api/v1/about_me` | Bearer | Get current authenticated user |
+| Method | Path | Auth | Rate Limit | Description |
+|---|---|---|---|---|
+| GET | `/health/live` | No | - | Liveness probe |
+| GET | `/health/ready` | No | - | Readiness probe (checks Postgres + Redis) |
+| POST | `/api/v1/register` | No | 1/min | Register a new user |
+| POST | `/api/v1/login` | No | 5/min | Login with username/password form |
+| POST | `/api/v1/refresh` | No | 3/min | Rotate refresh token and issue a new access token |
+| POST | `/api/v1/logout` | No | 3/min | Revoke the current refresh token and clear the cookie |
+| GET | `/api/v1/about_me` | Bearer (`user`) | - | Get the current authenticated user |
 
-## Quick Start (Poetry)
+## Configuration
 
-### 1. Prerequisites
+Configuration is loaded from a `.env` file via Pydantic Settings.
 
-- Python 3.12+
-- Poetry 2.0+
-- PostgreSQL
-- Redis
+| Variable | Required | Notes |
+|---|---|---|
+| `DEBUG` | No | `true` or `false` (default `false`) |
+| `CORS_ORIGINS` | No | JSON array of allowed origins |
+| `POSTGRES_DB` | Yes* | Used by Docker Compose to init the database |
+| `POSTGRES_USER` | Yes* | Used by Docker Compose to init the database |
+| `POSTGRES_PASSWORD` | Yes* | Used by Docker Compose to init the database |
+| `DATABASE_URL` | Yes | Must start with `postgresql+asyncpg://` or `postgres+asyncpg://` |
+| `REDIS_URL` | Yes | Must start with `redis://` or `rediss://` |
+| `ACCESS_SECRET` | Yes | Min length: 32; must not start with `CHANGE_ME` |
+| `REFRESH_SECRET` | Yes | Min length: 32; must not start with `CHANGE_ME` |
+| `ACCESS_TOKEN_EXPIRE_M` | No | Access token lifetime in minutes (default: `15`) |
+| `REFRESH_TOKEN_EXPIRE_M` | No | Refresh token lifetime in minutes (default: `43200`) |
+| `COOKIE_SECURE` | No | Default: `true` |
+| `COOKIE_SAMESITE` | No | One of `lax`, `strict`, `none` |
 
-### 2. Install Poetry
+\* Required only when running via Docker Compose.
 
-If you do not have Poetry installed:
+Notes:
 
-```bash
-pipx install poetry
-```
+- The app validates configuration on startup and refuses to run with missing,
+  malformed, or default (`CHANGE_ME...`) secrets.
+- For local HTTP development without HTTPS, set `COOKIE_SECURE=false`, otherwise
+  the browser/client may not send the refresh cookie and `/refresh` / `/logout`
+  can fail with `401`.
 
-### 3. Install dependencies
+## Quick Start (Docker Compose)
 
-Runtime dependencies:
+This is the recommended way to run the project locally. Service hostnames
+(`db`, `redis`) resolve inside the Docker network.
 
-```bash
-poetry install
-```
-
-Development and testing tools:
-
-```bash
-poetry install --with dev
-```
-
-Tip: you can run `poetry shell` once and then run commands without `poetry run`.
-
-### 4. Configure environment
-
-Create `.env` from template:
+### 1. Create the environment file
 
 ```bash
 cp .env.template .env
 ```
 
-On Windows PowerShell, use:
+On Windows PowerShell:
 
 ```powershell
 Copy-Item .env.template .env
 ```
 
-Set the required variables:
+Then edit `.env` and set real values (secrets, database credentials).
 
-| Variable | Required | Notes |
-|---|---|---|
-| `DEBUG` | No | `true` or `false` |
-| `CORS_ORIGINS` | No | JSON array of allowed origins |
-| `DATABASE_URL` | Yes | Must start with `postgresql+asyncpg://` or `postgres+asyncpg://` |
-| `REDIS_URL` | Yes | Must start with `redis://` or `rediss://` |
-| `ACCESS_SECRET` | Yes | Min length: 32 |
-| `REFRESH_SECRET` | Yes | Min length: 32 |
-| `ACCESS_TOKEN_EXPIRE_M` | No | Default: `15` |
-| `REFRESH_TOKEN_EXPIRE_M` | No | Default: `43200` |
-| `COOKIE_SECURE` | No | Default: `true` |
-| `COOKIE_SAMESITE` | No | One of `lax`, `strict`, `none` |
-
-Important for local HTTP development:
-
-- If you test without HTTPS, set `COOKIE_SECURE=false`
-- Otherwise browser/client may not send refresh cookie, and `/refresh`/`/logout` can fail with `401`
-
-### 5. Run database migrations
-
-```bash
-poetry run alembic upgrade head
-```
-
-### 6. Start the app
-
-```bash
-poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Open:
-
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
-
-## Quick Start (Docker Compose)
-
-1. Update `.env.docker` with real secrets.
-2. Start services:
+### 2. Start the services
 
 ```bash
 docker compose up --build
 ```
 
-3. Run migrations:
+### 3. Run database migrations
 
 ```bash
 docker compose run --rm app alembic upgrade head
@@ -208,10 +200,60 @@ make makemigrations m="describe change"
 make logs
 ```
 
-For production deployment (e.g., on a VPS), a dedicated compose file is provided:
+Once running, open:
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+
+### Production
+
+A dedicated compose file is provided for production (e.g., on a VPS). It pulls a
+prebuilt image and reads secrets from a server-side `.env`:
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Deployment is automated via GitHub Actions (`.github/workflows/cd.yml`): on a
+successful CI run against `main`, the image is built, pushed to GHCR, migrations
+are applied, and the stack is redeployed.
+
+## Local Development (without Docker)
+
+If you prefer running the app directly on your host, you need local PostgreSQL
+and Redis instances, and `.env` hostnames pointing to `localhost`.
+
+### 1. Prerequisites
+
+- Python 3.12+
+- Poetry 2.0+
+- PostgreSQL
+- Redis
+
+### 2. Install Poetry
+
+```bash
+pipx install poetry
+```
+
+### 3. Install dependencies
+
+```bash
+poetry install --with dev
+```
+
+Tip: run `poetry shell` once, then run commands without the `poetry run` prefix.
+
+### 4. Configure environment
+
+Create `.env` from the template and point `DATABASE_URL` / `REDIS_URL` to
+`localhost`.
+
+### 5. Run migrations and start the app
+
+```bash
+poetry run alembic upgrade head
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Testing
@@ -258,7 +300,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/register" \
   -d '{"username":"john_doe","email":"john@example.com","password":"StrongPass123"}'
 ```
 
-### Login (stores refresh cookie into file)
+### Login (stores the refresh cookie into a file)
 
 ```bash
 curl -i -X POST "http://127.0.0.1:8000/api/v1/login" \
@@ -303,19 +345,20 @@ Common statuses:
 - `201` Created (register)
 - `200` OK (login, refresh, logout, about_me)
 - `401` Unauthorized (invalid credentials/token)
+- `403` Forbidden (insufficient role)
 - `404` Not Found (user not found)
 - `409` Conflict (user already exists)
 - `429` Too Many Requests (rate limit exceeded)
 
 ## Migrations
 
-Create migration:
+Create a migration:
 
 ```bash
 poetry run alembic revision --autogenerate -m "describe change"
 ```
 
-Upgrade DB:
+Upgrade the database:
 
 ```bash
 poetry run alembic upgrade head
@@ -326,7 +369,3 @@ Downgrade one revision:
 ```bash
 poetry run alembic downgrade -1
 ```
-
-## Current Limitations
-
-- Test coverage is unit-focused; no end-to-end tests yet
