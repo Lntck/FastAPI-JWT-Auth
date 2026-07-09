@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     def validate_secret_length(cls, value: str) -> str:
         if len(value) < 32:
             raise ValueError("JWT secret must be at least 32 characters long")
+        if value.upper().startswith("CHANGE_ME"):
+            raise ValueError("JWT secret must be changed from the default value")
         return value
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
