@@ -2,9 +2,12 @@ from fastapi import Depends
 
 from app.core import Settings, get_settings
 from app.crud import UserCRUD
-from app.services import AuthService, UserService
+from app.services import (
+    AuthService,
+    UserService,
+)
 
-from .repositories import get_user_crud
+from .crud import get_user_crud
 
 
 async def get_user_service(user_crud: UserCRUD = Depends(get_user_crud)):

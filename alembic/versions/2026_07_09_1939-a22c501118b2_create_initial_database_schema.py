@@ -1,8 +1,8 @@
-"""Create Users table
+"""Create initial database schema
 
-Revision ID: bae2b0d12475
+Revision ID: a22c501118b2
 Revises:
-Create Date: 2026-06-09 22:34:34.686720
+Create Date: 2026-07-09 19:39:38.300018
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "bae2b0d12475"
+revision: str = "a22c501118b2"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +27,7 @@ def upgrade() -> None:
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("password_hash", sa.String(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
-        sa.Column("role", sa.String(), nullable=False),
+        sa.Column("role", sa.Enum("USER", "ADMIN", name="role"), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -45,7 +45,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("email", name=op.f("uq_users_email")),
     )
     op.create_index(
-        "ix_users_username_lower",
+        op.f("ix_users_username"),
         "users",
         [sa.literal_column("lower(username)")],
         unique=True,
@@ -54,5 +54,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index("ix_users_username_lower", table_name="users")
+    op.drop_index(op.f("ix_users_username"), table_name="users")
     op.drop_table("users")

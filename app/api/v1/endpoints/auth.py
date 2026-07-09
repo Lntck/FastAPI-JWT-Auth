@@ -5,9 +5,13 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_auth_service, get_user_service
-from app.api.middlewares import limiter
-from app.db import db_helper, redis_helper
+from app.core import limiter
+from app.dependencies import (
+    get_auth_service,
+    get_db_session,
+    get_redis_client,
+    get_user_service,
+)
 from app.exceptions import TokenExpiredError, TokenInvalidError
 from app.schemas import Token, UserRead, UserRegister
 from app.services import AuthService, UserService
@@ -21,7 +25,7 @@ router = APIRouter()
 async def register(
     request: Request,
     user: UserRegister,
-    session: AsyncSession = Depends(db_helper.session_getter),
+    session: AsyncSession = Depends(get_db_session),
     service: UserService = Depends(get_user_service),
 ):
     return await service.create_user(session, user)
@@ -33,8 +37,8 @@ async def login(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    session: AsyncSession = Depends(db_helper.session_getter),
-    redis_client: redis.Redis = Depends(redis_helper.get_client),
+    session: AsyncSession = Depends(get_db_session),
+    redis_client: redis.Redis = Depends(get_redis_client),
     service: AuthService = Depends(get_auth_service),
 ):
     access_token, refresh_token = await service.auth_user(
@@ -51,8 +55,8 @@ async def login(
 async def refresh(
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(db_helper.session_getter),
-    redis_client: redis.Redis = Depends(redis_helper.get_client),
+    session: AsyncSession = Depends(get_db_session),
+    redis_client: redis.Redis = Depends(get_redis_client),
     service: AuthService = Depends(get_auth_service),
 ):
     refresh_token = request.cookies.get("refresh_token", "")
@@ -71,8 +75,8 @@ async def refresh(
 async def logout(
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(db_helper.session_getter),
-    redis_client: redis.Redis = Depends(redis_helper.get_client),
+    session: AsyncSession = Depends(get_db_session),
+    redis_client: redis.Redis = Depends(get_redis_client),
     service: AuthService = Depends(get_auth_service),
 ):
     refresh_token = request.cookies.get("refresh_token", "")
