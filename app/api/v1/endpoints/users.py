@@ -8,7 +8,7 @@ from app.enums import Role
 from app.schemas import UserRead
 from app.services import UserService
 
-router = APIRouter()
+router = APIRouter(tags=["Users"])
 
 
 @router.get("/about_me", response_model=UserRead)

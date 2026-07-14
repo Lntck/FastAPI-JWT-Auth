@@ -17,7 +17,7 @@ from app.schemas import Token, UserRead, UserRegister
 from app.services import AuthService, UserService
 from app.utils import set_refresh_cookie
 
-router = APIRouter()
+router = APIRouter(tags=["Auth"])
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)

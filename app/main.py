@@ -10,7 +10,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="My Auth API",
-    version="1.0.1",
+    version="1.0.2",
     debug=settings.debug,
     lifespan=lifespan,
 )
@@ -24,5 +24,5 @@ app.add_middleware(
 )
 app.state.limiter = limiter
 register_exception_handlers(app)
-app.include_router(health_router)
+app.include_router(health_router, prefix="/health")
 app.include_router(v1_router, prefix=API_V1_PREFIX)

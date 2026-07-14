@@ -5,15 +5,15 @@ from fastapi.responses import JSONResponse
 
 from app.db import DatabaseClient, RedisClient
 
-router = APIRouter()
+router = APIRouter(tags=["Health"])
 
 
-@router.get("/health/live")
+@router.get("/live")
 async def liveness_probe():
     return {"status": "ok"}
 
 
-@router.get("/health/ready")
+@router.get("/ready")
 async def readiness_probe(request: Request):
     db: DatabaseClient = request.app.state.db
     redis: RedisClient = request.app.state.redis
